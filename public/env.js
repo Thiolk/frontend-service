@@ -1,0 +1,4 @@
+window.__ENV__ = {
+  PRODUCT_API_URL: "__PRODUCT_API_URL__",
+  ORDER_API_URL: "__ORDER_API_URL__"
+};
