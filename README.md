@@ -24,3 +24,17 @@ Run in the repo root:
 npm install -D typescript@4.9.5
 rm -rf node_modules package-lock.json
 npm install
+```
+
+## Docker Build
+```bash
+docker build -t ecommerce-frontend:local .
+```
+
+## Docker Run
+```bash
+docker run -p 8080:80 \
+  -e PRODUCT_API_URL=http://localhost:5000 \
+  -e ORDER_API_URL=http://localhost:5001 \
+  ecommerce-frontend:local
+```
