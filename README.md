@@ -1,14 +1,12 @@
 # Ecommerce Frontend (React)
-
 React-based web UI for the e-commerce microservices project.
 
----
+## Release
+- Current release: 1.0.1
 
 ## Prerequisites
 - Docker (recommended)
 - Node.js (LTS) + npm (optional for local dev)
-
----
 
 ## Important: TypeScript Compatibility (Required Fix)
 
