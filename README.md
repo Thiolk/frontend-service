@@ -4,7 +4,7 @@ React-based web UI for the e-commerce microservices project.
 This frontend supports **runtime configuration** of backend API URLs via an `env.js` file (injected when the container starts). This avoids rebuilding the image when API endpoints change.
 
 ## Release
-- Current release: 1.0.1
+- Current release: 1.1.0
 
 ## Prerequisites
 - Docker + Docker Compose (recommended)
@@ -29,8 +29,7 @@ npm install
 ## Docker
 Docker-related files are located in: deploy/docker/
 
-### Quick Start (Docker Compose)
-1) Create your local environment file
+### 1) Create your local environment file
 
 From the repo root:
 ```bash
@@ -38,7 +37,7 @@ cp deploy/docker/.env.example deploy/docker/.env
 ```
 Edit deploy/docker/.env if needed.
 
-2) Build and run
+### 2) Build and run
 From the repo root:
 ```bash
 docker compose -f deploy/docker/docker-compose.yml --env-file deploy/docker/.env up -d --build
@@ -47,12 +46,7 @@ docker ps
 
 Open the app: http://localhost:8080 (or your FRONTEND_PORT value)
 
-3) Verify runtime env injection
-Open: http://localhost:8080/env.js
-
-You should see real values (not __PRODUCT_API_URL__ placeholders).
-
-4) Stop
+### 3) Stop
 ```bash
 docker compose -f deploy/docker/docker-compose.yml --env-file deploy/docker/.env down
 ```
@@ -73,11 +67,6 @@ ORDER_API_URL=http://localhost:5001
 We scan the built frontend container image for known CVEs using Docker Scout.
 
 From the repo root:
-
-### Ensure the image exists locally
-```bash
-docker build -f deploy/docker/Dockerfile -t ecommerce-frontend:local .
-```
 
 ### Scan
 ```bash
