@@ -1,5 +1,6 @@
 services:
   frontend:
+    image: ecommerce-frontend:local
     container_name: ecommerce-frontend
     build:
       context: ../..

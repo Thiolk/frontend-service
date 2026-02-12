@@ -67,3 +67,29 @@ Example .env values:
 FRONTEND_PORT=8080
 PRODUCT_API_URL=http://localhost:5000
 ORDER_API_URL=http://localhost:5001
+
+## Security Scanning (Docker Scout)
+
+We scan the built frontend container image for known CVEs using Docker Scout.
+
+From the repo root:
+
+### Ensure the image exists locally
+```bash
+docker build -f deploy/docker/Dockerfile -t ecommerce-frontend:local .
+```
+
+### Scan
+```bash
+docker scout quickview --local ecommerce-frontend:local
+docker scout cves --local ecommerce-frontend:local
+```
+
+### Policy / Rationale
+
+The frontend runtime image is based on the official nginx image.
+Vulnerabilities reported in system packages (e.g., openssl, libxml2, curl) are inherited from the upstream base image.
+
+We mitigate this by:
+- using an appropriate official base image tag and updating it when patches are released
+- keeping the runtime image minimal (static React build served by Nginx)
