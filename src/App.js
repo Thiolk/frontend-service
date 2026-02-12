@@ -5,15 +5,19 @@ function App() {
     const [products, setProducts] = useState([]);
     const [orders, setOrders] = useState([]);
 
+    // Runtime-configured API base URLs (Option B)
+    const PRODUCT_API_BASE = window.__ENV__?.PRODUCT_API_URL || 'http://localhost:5000';
+    const ORDER_API_BASE = window.__ENV__?.ORDER_API_URL || 'http://localhost:5001';
+
     useEffect(() => {
         // Fetch products
-        axios.get('http://localhost:3001/products')
+        axios.get(`${PRODUCT_API_BASE}/products`)
             .then(res => setProducts(res.data))
             .catch(err => console.error(err));
     }, []);
 
     const createOrder = (productId) => {
-        axios.post('http://localhost:3002/orders', {
+        axios.post(`${ORDER_API_BASE}/orders`, {
             productId: productId,
             quantity: 1
         })

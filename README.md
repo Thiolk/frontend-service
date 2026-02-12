@@ -23,14 +23,16 @@ npm install -D typescript@4.9.5
 rm -rf node_modules package-lock.json
 npm install
 ```
-## Configuration
-cp .env.example .env
-Example variables (Create React App requires the REACT_APP_ prefix):
-REACT_APP_PRODUCT_API_URL=http://localhost:5000
-REACT_APP_ORDER_API_URL=http://localhost:5001
 
-## Build and Run with Docker
+## Docker Build
 ```bash
-docker build -t frontend:local -f deploy/docker/Dockerfile .
-docker run --rm -p 8080:80 frontend:local
+docker build -t ecommerce-frontend:local .
+```
+
+## Docker Run
+```bash
+docker run -p 8080:80 \
+  -e PRODUCT_API_URL=http://localhost:5000 \
+  -e ORDER_API_URL=http://localhost:5001 \
+  ecommerce-frontend:local
 ```
