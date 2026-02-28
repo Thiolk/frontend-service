@@ -67,8 +67,38 @@ pipeline {
       steps {
         sh '''
           set -eux
-          CI=true npm test -- --watchAll=false
+          CI=true npm test -- --watchAll=false --coverage
         '''
+      }
+    }
+
+    stage('Static Analysis (SonarQube)') {
+      environment {
+        SONAR_PROJECT_KEY = 'ecommerce-frontend'
+      }
+      steps {
+        withSonarQubeEnv('SonarQubeServer') {
+          sh '''
+          set -eu
+          mkdir -p .scannerwork
+          docker run --rm \
+              -e SONAR_HOST_URL="http://host.docker.internal:9005" \
+              -e SONAR_TOKEN="$SONAR_AUTH_TOKEN" \
+              -v "$WORKSPACE:/usr/src" \
+              -w /usr/src \
+              sonarsource/sonar-scanner-cli:latest \
+              -Dsonar.userHome=/usr/src \
+              -Dsonar.working.directory=.scannerwork
+          '''
+        }
+      }
+    }
+
+    stage('Quality Gate') {
+      steps {
+          timeout(time: 5, unit: 'MINUTES') {
+              waitForQualityGate abortPipeline: true
+          }
       }
     }
 
