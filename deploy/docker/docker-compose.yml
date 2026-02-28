@@ -8,6 +8,6 @@ services:
     ports:
       - "${FRONTEND_PORT}:80"
     environment:
-      PRODUCT_API_URL: ${PRODUCT_API_URL}
-      ORDER_API_URL: ${ORDER_API_URL}
+      PRODUCT_API_URL: "${PRODUCT_API_URL}"
+      ORDER_API_URL: "${ORDER_API_URL}"
     restart: unless-stopped
