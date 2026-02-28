@@ -16,4 +16,6 @@ COPY deploy/docker/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+
+# run our script, which then execs nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]
