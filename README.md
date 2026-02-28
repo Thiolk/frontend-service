@@ -4,7 +4,7 @@ React-based web UI for the e-commerce microservices project.
 This frontend supports **runtime configuration** of backend API URLs via an `env.js` file (injected when the container starts). This avoids rebuilding the image when API endpoints change.
 
 ## Release
-- Current release: 2.0.0
+- Current release: 2.0.1
 - Docker Hub namespace: `thiolengkiat413/frontend`
 
 ## Tech Stack
