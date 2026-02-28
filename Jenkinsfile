@@ -57,8 +57,8 @@ pipeline {
         sh '''
           set -eux
           npm ci
-          # CRA has eslint built-in; if you don't have a separate lint script, skip safely
-          npm run lint || echo "No lint script; skipping"
+          npm run lint
+          npm run format:check
         '''
       }
     }
@@ -67,7 +67,7 @@ pipeline {
       steps {
         sh '''
           set -eux
-          CI=true npm test -- --watchAll=false || echo "No tests / tests skipped"
+          CI=true npm test -- --watchAll=false
         '''
       }
     }
