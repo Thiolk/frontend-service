@@ -5,7 +5,7 @@ pipeline {
     PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
     DOCKERHUB_USER   = "thiolengkiat413"
-    IMAGE_NAME       = "ecommerce-frontend"
+    IMAGE_NAME       = "frontend"
     DOCKERFILE_PATH  = "deploy/docker/Dockerfile"
 
     COMPOSE_FILE     = "deploy/docker/docker-compose.yml"
@@ -52,7 +52,7 @@ pipeline {
       }
     }
 
-    stage('Build (Lint)') {
+    stage('Build (Lint/Format)') {
       steps {
         sh '''
           set -eux
