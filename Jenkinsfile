@@ -23,16 +23,21 @@ pipeline {
         script {
           env.IMAGE_TAG   = ""
           env.TARGET_ENV  = "build"
+
           def branch  = env.BRANCH_NAME ?: ""
           def tagName = env.TAG_NAME?.trim()
           env.RELEASE_TAG = tagName ?: ""
 
           if (tagName) {
             env.TARGET_ENV = "prod"
+          } else if (branch == "main") {
+            env.TARGET_ENV = "staging"          // promotion/deploy-to-staging happens here
           } else if (branch == "develop") {
             env.TARGET_ENV = "dev"
           } else if (branch.startsWith("release/")) {
-            env.TARGET_ENV = "staging"
+            env.TARGET_ENV = "rc"               // release candidate validation only
+          } else {
+            env.TARGET_ENV = "build"            // feature/* or other branches
           }
 
           echo "BRANCH_NAME: ${branch}"
@@ -53,6 +58,7 @@ pipeline {
     }
 
     stage('Build (Lint/Format)') {
+      when { expression { env.TARGET_ENV == "build" } }
       steps {
         sh '''
           set -eux
@@ -73,6 +79,7 @@ pipeline {
     }
 
     stage('Static Analysis (SonarQube)') {
+      when { expression { env.TARGET_ENV == "build" } }
       environment {
         SONAR_PROJECT_KEY = 'ecommerce-frontend'
       }
@@ -95,10 +102,11 @@ pipeline {
     }
 
     stage('Quality Gate') {
+      when { expression { env.TARGET_ENV == "build" } }
       steps {
-          timeout(time: 5, unit: 'MINUTES') {
-              waitForQualityGate abortPipeline: true
-          }
+        timeout(time: 5, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
       }
     }
 
@@ -113,13 +121,14 @@ pipeline {
             }
             env.IMAGE_TAG = releaseTag
           } else {
-            env.IMAGE_TAG = env.BUILD_NUMBER.toString()
+            env.IMAGE_TAG = "${env.TARGET_ENV}-${env.BUILD_NUMBER}"
           }
 
           echo "Resolved image tag:"
           echo "  TARGET_ENV  = ${env.TARGET_ENV}"
           echo "  IMAGE_TAG   = ${env.IMAGE_TAG}"
           echo "  RELEASE_TAG = ${releaseTag ?: 'none'}"
+          echo "  BUILD_NUMBER= ${env.BUILD_NUMBER}"
         }
       }
     }
@@ -134,7 +143,12 @@ pipeline {
     }
 
     stage('Smoke Test (Container + env.js)') {
-      when { expression { return fileExists('tests/frontend-smoke.sh') } }
+      // Align with higher env confidence: run on staging + prod (optional: include rc)
+      when {
+        expression {
+          return fileExists('tests/frontend-smoke.sh') && (env.TARGET_ENV in ["staging", "prod"])
+        }
+      }
       steps {
         sh '''
           set -eux
@@ -197,21 +211,27 @@ pipeline {
         sh '''
           set -eux
           echo "Deploy placeholder: Kubernetes phase"
-          echo "STAGING image: ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+          echo "STAGING image (promotion step from main): ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
         '''
       }
     }
 
-    stage('Prod Eligibility Check (tag must be on main)') {
+    stage('Prod Eligibility Check (tag must be on HEAD)') {
       when { expression { return env.TARGET_ENV == "prod" } }
       steps {
         sh '''
           set -eux
-          git fetch origin main --tags
-          if git merge-base --is-ancestor HEAD origin/main; then
-            echo "OK: Tagged commit is on main."
+
+          echo "HEAD:"
+          git show -s --oneline --decorate HEAD
+
+          echo "Tags pointing at HEAD:"
+          git tag --points-at HEAD
+
+          if git tag --points-at HEAD | grep -qx "${TAG_NAME}"; then
+            echo "OK: HEAD is correctly tagged with ${TAG_NAME}"
           else
-            echo "BLOCK: Tagged commit is NOT on main."
+            echo "BLOCK: HEAD is not tagged with ${TAG_NAME}"
             exit 1
           fi
         '''
@@ -253,6 +273,9 @@ pipeline {
         else
           docker compose -f "deploy/docker/docker-compose.yml" down -v || true
         fi
+
+        # Optional: prevent workspace from staying "dirty"
+        rm -f "deploy/docker/.env" || true
       '''
     }
   }
