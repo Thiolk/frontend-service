@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-env
+data:
+  env.js: |
+    window.__ENV__ = {
+      PRODUCT_API_URL: "http://product-prod.local",
+      ORDER_API_URL: "http://order-prod.local"
+    };
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+spec:
+  rules:
+    - host: frontend-prod.local
