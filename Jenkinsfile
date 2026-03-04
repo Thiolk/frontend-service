@@ -258,42 +258,42 @@ pipeline {
     }
 
     stage('Deploy + Smoke Test (Dev/Staging/Prod)') {
-  when { expression { return env.TARGET_ENV in ["dev","staging","prod"] } }
-  steps {
-    withCredentials([file(credentialsId: 'kubeconfig-minikube', variable: 'KUBECONFIG_FILE')]) {
-      sh '''
-        set -eux
-        export KUBECONFIG="$KUBECONFIG_FILE"
+      when { expression { return env.TARGET_ENV in ["dev","staging","prod"] } }
+      steps {
+        withCredentials([file(credentialsId: 'kubeconfig-minikube', variable: 'KUBECONFIG_FILE')]) {
+          sh '''
+            set -eux
+            export KUBECONFIG="$KUBECONFIG_FILE"
 
-        chmod +x deploy/ci/load-infra-outputs.sh deploy/ci/smoke-test-ingress.sh
-        eval "$(./deploy/ci/load-infra-outputs.sh)"
-        kubectl config use-context "$KUBE_CONTEXT"
+            chmod +x deploy/ci/load-infra-outputs.sh deploy/ci/smoke-test-ingress.sh
+            eval "$(./deploy/ci/load-infra-outputs.sh)"
+            kubectl config use-context "$KUBE_CONTEXT"
 
-        NS="${TARGET_ENV}"
-        HOST="frontend-${TARGET_ENV}.local"
-        OVERLAY="${K8S_DIR}/${TARGET_ENV}"
-        IMAGE="${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+            NS="${TARGET_ENV}"
+            HOST="frontend-${TARGET_ENV}.local"
+            OVERLAY="${K8S_DIR}/${TARGET_ENV}"
+            IMAGE="${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-        echo "Deploying frontend:"
-        echo "  NS=$NS"
-        echo "  HOST=$HOST"
-        echo "  OVERLAY=$OVERLAY"
-        echo "  IMAGE=$IMAGE"
+            echo "Deploying frontend:"
+            echo "  NS=$NS"
+            echo "  HOST=$HOST"
+            echo "  OVERLAY=$OVERLAY"
+            echo "  IMAGE=$IMAGE"
 
-        kubectl kustomize "$OVERLAY" | kubectl -n "$NS" apply -f -
-        kubectl -n "$NS" set image deployment/frontend frontend="$IMAGE"
-        kubectl -n "$NS" rollout status deployment/frontend --timeout=180s
+            kubectl kustomize "$OVERLAY" | kubectl -n "$NS" apply -f -
+            kubectl -n "$NS" set image deployment/frontend frontend="$IMAGE"
+            kubectl -n "$NS" rollout status deployment/frontend --timeout=180s
 
-        ./deploy/ci/smoke-test-ingress.sh "$HOST" "/"
-        ./deploy/ci/smoke-test-ingress.sh "$HOST" "/env.js"
+            ./deploy/ci/smoke-test-ingress.sh "$HOST" "/"
+            ./deploy/ci/smoke-test-ingress.sh "$HOST" "/env.js"
 
-        if [ "$TARGET_ENV" = "prod" ]; then
-          echo "Also pushed: ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
-        fi
-      '''
+            if [ "$TARGET_ENV" = "prod" ]; then
+              echo "Also pushed: ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
+            fi
+          '''
+        }
+      }
     }
-  }
-}
   }
 
   post {
