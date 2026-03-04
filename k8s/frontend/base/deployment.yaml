@@ -22,8 +22,8 @@ spec:
         - name: frontend
           image: thiolengkiat413/frontend:latest
           imagePullPolicy: IfNotPresent
-          command: ["nginx"]
-          args: ["-g", "daemon off;"]
+          command: ['nginx']
+          args: ['-g', 'daemon off;']
           ports:
             - containerPort: 80
           volumeMounts:
