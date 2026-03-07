@@ -60,7 +60,7 @@ pipeline {
     }
 
     stage('Build (Lint/Format)') {
-      when { expression { env.TARGET_ENV == "build" } }
+      when { expression { env.TARGET_ENV in ["build", "rc"] } }
       steps {
         sh '''
           set -eux
@@ -71,10 +71,22 @@ pipeline {
     }
 
     stage('Test (Unit)') {
+      when { expression { env.TARGET_ENV in ["build", "rc"] } }
       steps {
         sh '''
           set -eux
           CI=true npm test -- --watchAll=false --coverage
+        '''
+      }
+    }
+
+    stage('Test (Integration)') {
+      when { expression { env.TARGET_ENV in ["build", "rc"] } }
+      steps {
+        sh '''
+          set -eux
+          npx playwright install chromium
+          npm run test:integration
         '''
       }
     }
@@ -125,6 +137,42 @@ pipeline {
           echo "  IMAGE_TAG   = ${env.IMAGE_TAG}"
           echo "  RELEASE_TAG = ${releaseTag ?: 'none'}"
           echo "  BUILD_NUMBER= ${env.BUILD_NUMBER}"
+        }
+      }
+    }
+
+    stage('Infrastructure Validation (Kustomize + Dry Run)') {
+      steps {
+        withCredentials([file(credentialsId: 'kubeconfig-minikube', variable: 'KUBECONFIG_FILE')]) {
+          sh '''
+            set -eux
+            export KUBECONFIG="$KUBECONFIG_FILE"
+
+            mkdir -p artifacts
+
+            validate_overlay() {
+              OVERLAY="$1"
+              NAME="$2"
+
+              echo "======================================"
+              echo "Validating overlay: $NAME ($OVERLAY)"
+              echo "======================================"
+
+              echo "--- kubectl kustomize: $OVERLAY ---"
+              kubectl kustomize "$OVERLAY" | tee "artifacts/kustomize-${NAME}.yaml" >/dev/null
+
+              echo "--- kubectl dry-run apply: $OVERLAY ---"
+              kubectl apply --dry-run=client -f "artifacts/kustomize-${NAME}.yaml" | tee "artifacts/dryrun-${NAME}.log"
+            }
+
+            if [ "${TARGET_ENV}" = "build" ] || [ "${TARGET_ENV}" = "rc" ]; then
+              validate_overlay "${K8S_DIR}/dev" "dev"
+              validate_overlay "${K8S_DIR}/staging" "staging"
+              validate_overlay "${K8S_DIR}/prod" "prod"
+            else
+              validate_overlay "${K8S_DIR}/${TARGET_ENV}" "${TARGET_ENV}"
+            fi
+          '''
         }
       }
     }
