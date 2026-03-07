@@ -1,4 +1,3 @@
-
 # Ecommerce Frontend (React)
 
 React-based web UI for the e-commerce microservices project.
@@ -9,7 +8,7 @@ This frontend supports **runtime configuration** of backend API URLs via an `env
 
 # Release
 
-- Current release: 2.1.0
+- Current release: 2.2.0
 - Docker Hub namespace: `thiolengkiat413/frontend`
 
 ---
@@ -24,6 +23,8 @@ This frontend supports **runtime configuration** of backend API URLs via an `env
 - Docker (multi-stage build)
 - Kubernetes (environment deployments)
 - Docker Scout (CVE scanning)
+- Jenkins CI/CD
+- Terraform (infrastructure provisioning)
 
 ---
 
@@ -68,7 +69,6 @@ This allows the **same container image to run in dev, staging, and production en
 
 - Docker + Docker Compose (recommended)
 - Node.js (LTS) + npm (optional)
-- npm
 
 ---
 
@@ -178,10 +178,10 @@ docker compose -f deploy/docker/docker-compose.yml   --env-file deploy/docker/.e
 The frontend is deployed to Kubernetes across **three isolated environments**:
 
 | Environment | Namespace |
-|--------------|-----------|
-| Development | dev |
-| Staging | staging |
-| Production | prod |
+| ----------- | --------- |
+| Development | dev       |
+| Staging     | staging   |
+| Production  | prod      |
 
 Kubernetes manifests are structured using **Kustomize**:
 
@@ -230,13 +230,49 @@ The frontend service runs as a **ClusterIP service** and is exposed externally v
 
 Example hosts:
 
-| Environment | URL |
-|-------------|-----|
-| dev | frontend-dev.local |
-| staging | frontend-staging.local |
-| prod | frontend-prod.local |
+| Environment | URL                    |
+| ----------- | ---------------------- |
+| dev         | frontend-dev.local     |
+| staging     | frontend-staging.local |
+| prod        | frontend-prod.local    |
 
 Ingress routing allows browser traffic to reach the frontend while backend services remain internal.
+
+---
+
+# Terraform Infrastructure Integration
+
+Infrastructure is provisioned separately using **Terraform**.
+
+Terraform manages:
+
+- Kubernetes cluster configuration (Minikube)
+- ingress-nginx controller
+- environment infrastructure
+- CI/CD integration outputs
+
+The Terraform pipeline produces artifacts such as:
+
+```
+infra-outputs.json
+infra-outputs-dev.json
+infra-outputs-staging.json
+infra-outputs-prod.json
+```
+
+These files contain values such as:
+
+- `KUBE_CONTEXT`
+- `INGRESS_NAMESPACE`
+- `INGRESS_SERVICE`
+
+During deployment, Jenkins retrieves these outputs and configures `kubectl` automatically using:
+
+```
+deploy/ci/load-infra-outputs.sh
+```
+
+This ensures application pipelines always deploy to the correct cluster environment.
 
 ---
 
@@ -244,12 +280,12 @@ Ingress routing allows browser traffic to reach the frontend while backend servi
 
 This repository uses a **multi-environment Jenkins pipeline**.
 
-| Branch Type | Environment | Behavior |
-|--------------|-------------|----------|
-| feature/* | build | lint, test, sonar, build image |
-| develop | dev | build, push image, deploy |
-| main | staging | build, push image, deploy |
-| Git tag | prod | build, push version tag + latest, approval gate |
+| Branch Type | Environment | Behavior                                        |
+| ----------- | ----------- | ----------------------------------------------- |
+| feature/\*  | build       | lint, test, sonar, build image                  |
+| develop     | dev         | build, push image, deploy                       |
+| main        | staging     | build, push image, deploy                       |
+| Git tag     | prod        | build, push version tag + latest, approval gate |
 
 Pipeline stages include:
 
@@ -262,16 +298,18 @@ Pipeline stages include:
 7. Kubernetes deployment
 8. Ingress smoke testing
 
+Ingress smoke tests verify that the deployed service is reachable via the environment host.
+
 ---
 
 # Image Tagging Strategy
 
-| Environment | Tag Format |
-|-------------|-----------|
-| build | `<BUILD_NUMBER>` |
-| dev | `dev-<BUILD_NUMBER>` |
-| staging | `staging-<BUILD_NUMBER>` |
-| prod | `<TAG>` + `latest` |
+| Environment | Tag Format               |
+| ----------- | ------------------------ |
+| build       | `<BUILD_NUMBER>`         |
+| dev         | `dev-<BUILD_NUMBER>`     |
+| staging     | `staging-<BUILD_NUMBER>` |
+| prod        | `<TAG>` + `latest`       |
 
 ---
 
@@ -320,4 +358,5 @@ Key design principles:
 - Environment isolation via Kubernetes namespaces
 - Zero-downtime deployments via RollingUpdate
 - CI/CD automation via Jenkins
+- Infrastructure provisioning via Terraform
 - Container security scanning using Docker Scout
