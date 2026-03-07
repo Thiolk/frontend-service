@@ -79,6 +79,17 @@ pipeline {
       }
     }
 
+    stage('Test (Integration)') {
+      when { expression { env.TARGET_ENV in ["build", "rc"] } }
+      steps {
+        sh '''
+          set -eux
+          npx playwright install chromium
+          npm run test:integration
+        '''
+      }
+    }
+
     stage('Static Analysis (SonarQube)') {
       when { expression { env.TARGET_ENV == "build" } }
       environment {
