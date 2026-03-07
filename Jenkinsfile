@@ -60,7 +60,7 @@ pipeline {
     }
 
     stage('Build (Lint/Format)') {
-      when { expression { env.TARGET_ENV == "build" } }
+      when { expression { env.TARGET_ENV in ["build", "rc"] } }
       steps {
         sh '''
           set -eux
@@ -71,6 +71,7 @@ pipeline {
     }
 
     stage('Test (Unit)') {
+      when { expression { env.TARGET_ENV in ["build", "rc"] } }
       steps {
         sh '''
           set -eux
