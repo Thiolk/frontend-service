@@ -1,3 +1,4 @@
+
 # Ecommerce Frontend (React)
 
 React-based web UI for the e-commerce microservices project.
@@ -179,9 +180,9 @@ The frontend is deployed to Kubernetes across **three isolated environments**:
 
 | Environment | Namespace |
 | ----------- | --------- |
-| Development | dev       |
-| Staging     | staging   |
-| Production  | prod      |
+| Development | dev |
+| Staging | staging |
+| Production | prod |
 
 Kubernetes manifests are structured using **Kustomize**:
 
@@ -230,11 +231,11 @@ The frontend service runs as a **ClusterIP service** and is exposed externally v
 
 Example hosts:
 
-| Environment | URL                    |
-| ----------- | ---------------------- |
-| dev         | frontend-dev.local     |
-| staging     | frontend-staging.local |
-| prod        | frontend-prod.local    |
+| Environment | URL |
+| ----------- | ---- |
+| dev | frontend-dev.local |
+| staging | frontend-staging.local |
+| prod | frontend-prod.local |
 
 Ingress routing allows browser traffic to reach the frontend while backend services remain internal.
 
@@ -280,12 +281,12 @@ This ensures application pipelines always deploy to the correct cluster environm
 
 This repository uses a **multi-environment Jenkins pipeline**.
 
-| Branch Type | Environment | Behavior                                        |
-| ----------- | ----------- | ----------------------------------------------- |
-| feature/\*  | build       | lint, test, sonar, build image                  |
-| develop     | dev         | build, push image, deploy                       |
-| main        | staging     | build, push image, deploy                       |
-| Git tag     | prod        | build, push version tag + latest, approval gate |
+| Branch Type | Environment | Behavior |
+| ----------- | ----------- | -------- |
+| feature/* | build | lint, test, sonar, build image |
+| develop | dev | build, push image, deploy |
+| main | staging | build, push image, deploy |
+| Git tag | prod | build, push version tag + latest, approval gate |
 
 Pipeline stages include:
 
@@ -304,12 +305,12 @@ Ingress smoke tests verify that the deployed service is reachable via the enviro
 
 # Image Tagging Strategy
 
-| Environment | Tag Format               |
-| ----------- | ------------------------ |
-| build       | `<BUILD_NUMBER>`         |
-| dev         | `dev-<BUILD_NUMBER>`     |
-| staging     | `staging-<BUILD_NUMBER>` |
-| prod        | `<TAG>` + `latest`       |
+| Environment | Tag Format |
+| ----------- | ---------- |
+| build | `<BUILD_NUMBER>` |
+| dev | `dev-<BUILD_NUMBER>` |
+| staging | `staging-<BUILD_NUMBER>` |
+| prod | `<TAG>` + `latest` |
 
 ---
 
@@ -339,24 +340,10 @@ docker scout cves --local ecommerce-frontend:local
 ## Policy / Rationale
 
 The frontend runtime image is based on the official nginx image.
+
 Vulnerabilities reported in system packages (e.g., openssl, libxml2, curl) are inherited from the upstream base image.
 
 We mitigate this by:
 
 - using an appropriate official base image tag and updating it when patches are released
 - keeping the runtime image minimal (static React build served by Nginx)
-
----
-
-# Summary
-
-The frontend service provides the **user-facing interface** for the e-commerce system.
-
-Key design principles:
-
-- Runtime configuration (no rebuild required for endpoint changes)
-- Environment isolation via Kubernetes namespaces
-- Zero-downtime deployments via RollingUpdate
-- CI/CD automation via Jenkins
-- Infrastructure provisioning via Terraform
-- Container security scanning using Docker Scout
