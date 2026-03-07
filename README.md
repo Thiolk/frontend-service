@@ -8,7 +8,7 @@ This frontend supports **runtime configuration** of backend API URLs via an `env
 
 # Release
 
-- Current release: 2.1.0
+- Current release: 2.2.0
 - Docker Hub namespace: `thiolengkiat413/frontend`
 
 ---
